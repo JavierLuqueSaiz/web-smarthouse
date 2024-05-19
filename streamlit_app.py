@@ -42,7 +42,7 @@ def load_data():
     with open('dates.pkl', 'rb') as f:
             dates = pickle.load(f)
 
-    return df_features, df_objetivos, dates
+    return X, y, dates
 df_features, df_objetivos, dates = load_data()
 
 st.sidebar.title("Select the period")
