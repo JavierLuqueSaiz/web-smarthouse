@@ -177,12 +177,7 @@ if button_pressed:
         st.pyplot(fig)
 
     initial_datetime = datetime.combine(initial_day, initial_hour)
-    final_datetime = datetime.combine(final_day, final_hour)
-
-    mes_inicio = initial_datetime.month
-    mes_final = final_datetime.month
-    dia_inicio = initial_datetime.day
-    dia_final = final_datetime.day
+    final_datetime = datetime.combine(final_day, final_hour) + timedelta(hours=1)
 
     def api(i,f):
 
