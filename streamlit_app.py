@@ -45,6 +45,15 @@ def load_data():
     return X, y, dates
 df_features, df_objetivos, dates = load_data()
 
+st.sidebar.title("Select appliance/Room")
+
+appl = st.sidebar.selectbox("Appliance/Room", ["Overall", "Dishwasher", "Office", "Fridge", "Wine Cellar", "Garage Door", "Barn", "Well", "Microwave", "Living Room"])
+
+appls = dict(zip(["Overall", "Dishwasher", "Office", "Fridge", "Wine Cellar", "Garage Door", "Barn", "Well", "Microwave", "Living Room"],
+                 ['House.overall..kW.', 'Dishwasher..kW.', 'Home.office..kW.',
+        'Fridge..kW.', 'Wine.cellar..kW.', 'Garage.door..kW.', 'Barn..kW.',
+        'Well..kW.', 'Microwave..kW.', 'Living.room..kW.']))
+
 st.sidebar.title("Select the period")
 
 #pre_trained = st.sidebar.checkbox("Use pre-trained-model")
@@ -85,7 +94,7 @@ if button_pressed:
     })
 
     X = np.array(df_features)
-    y = np.array(df_objetivos[['House.overall..kW.']]).flatten()
+    y = np.array(df_objetivos[[appls[appl]]]).flatten()
 
     X_test = X[initial_index:final_index+1]
     y_test = y[initial_index:final_index+1]
