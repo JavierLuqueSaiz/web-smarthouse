@@ -37,7 +37,7 @@ Select the dates and reveal how much you will spend
 def load_data():
     with open('features.pkl', 'rb') as f:
             X = pickle.load(f)
-    with open('objectives.pkl', 'rb') as f:
+    with open('objetivos.pkl', 'rb') as f:
             y = pickle.load(f)
     with open('dates.pkl', 'rb') as f:
             dates = pickle.load(f)
