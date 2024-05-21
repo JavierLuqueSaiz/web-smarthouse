@@ -3,7 +3,7 @@
 This is a project carried out by students of the Degree of Data Science (GCD) of the Universitat Politènica de València (UPV) during our third year: Daniel Garijo, Ángel López, Javier Luque, Claudia Martínez, Pablo Parrilla and Andrea Sánchez.
 The project consists on using data from a house to predict its energetic consumption. The whole project is implemented with python.
 
----
+___
 
 - **M2_T01**: Brief report done halfway through the project.
 - **G1_T01**: Memory of the project that includes a complete report on the problem and the solutions provided. The origin of the data and all the model used can be consulted here.
