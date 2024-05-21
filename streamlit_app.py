@@ -59,11 +59,11 @@ st.html(code)
 # Descarga datos
 @st.cache_data
 def load_data():
-    with open('features.pkl', 'rb') as f:
+    with open('streamlit-application/features.pkl', 'rb') as f:
             X = pickle.load(f)
-    with open('objetivos.pkl', 'rb') as f:
+    with open('streamlit-application/objetivos.pkl', 'rb') as f:
             y = pickle.load(f)
-    with open('dates.pkl', 'rb') as f:
+    with open('streamlit-application/dates.pkl', 'rb') as f:
             dates = pickle.load(f)
 
     return X, y, dates
