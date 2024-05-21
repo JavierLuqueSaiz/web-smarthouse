@@ -1,7 +1,7 @@
 # Smart House: A Digital Twin
 
 This is a project carried out by students of the Degree of Data Science (GCD) of the Universitat Politènica de València (UPV) during our third year: Daniel Garijo, Ángel López, Javier Luque, Claudia Martínez, Pablo Parrilla and Andrea Sánchez.
-The project consists on using data from a house to predict its energetic consumption.
+The project consists on using data from a house to predict its energetic consumption. The whole project is implemented with python.
 
 ---
 
@@ -10,10 +10,24 @@ The project consists on using data from a house to predict its energetic consump
 
 ---
 
-\begin{itemize}
 - **requirements.txt**: Versions of the libraries of python needed to deploy the streamlit application.
 - **streamlit_app.py**: Base code of the streamlit application developed with python, including inserts of HTML and CSS.
 - **streamlit-application**: Folder with pickle files that contain the data used.
+  - dates.pkl: numpy array with the dates.
+  - features.pkl: numpy array with the independent variables.
+  - objetivos.pkl: numpy array with the dependent variables.
 
-\end{itemize}
+---
+
+## data-transformations
+
+Includes the code used in the preprocess stage to transform the original dataset.
+
+## time-series-training
+
+Training of models that deal with the data as a time series. The aggregation for this models is daily.
+
+## machine-learning-training
+
+Training of machine learning models, including embedings. The aggregation for this models is hourly.
 
