@@ -7,3 +7,4 @@ xgboost==2.0.3
 requests==2.31.0
 json5==0.9.6
 matplotlib==3.8.4
+lightgbm==4.3.0
