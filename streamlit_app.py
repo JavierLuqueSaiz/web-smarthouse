@@ -1,45 +1,69 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Tue May 31 17:36:40 2022
-
-@author: javil
-"""
-
 import streamlit as st
 import pandas as pd
 import cufflinks as cf
-from sklearn.ensemble import StackingRegressor
 import numpy as np
+from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import StackingRegressor, GradientBoostingRegressor, RandomForestRegressor, AdaBoostRegressor
 from sklearn.svm import SVR
-from sklearn.ensemble import GradientBoostingRegressor
+from sklearn.tree import DecisionTreeRegressor
 import xgboost as xgb
-#from sklearn.ensemble import AdaBoostRegressor
-from sklearn.ensemble import RandomForestRegressor
+import lightgbm as lgb
 import requests
 import json
-import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time, date
 import matplotlib.pyplot as plt
 import pickle
-from sklearn.metrics import root_mean_squared_error, mean_absolute_percentage_error
-
+from sklearn.metrics import root_mean_squared_error
+from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_absolute_error
+from sklearn.metrics import mean_absolute_percentage_error
+from sklearn.metrics import r2_score
+from sklearn.metrics import explained_variance_score
+from sklearn.metrics import median_absolute_error
+from sklearn.metrics import max_error
+from sklearn.metrics import mean_squared_log_error
+from sklearn.metrics import mean_poisson_deviance
+from sklearn.metrics import mean_gamma_deviance
 
 cf.set_config_file(sharing='private',theme='white',offline=True)
 
-st.title('Energetic Consumption Prediction')
-
-st.markdown("""
-Select the dates and reveal how much you will spend
-""")
+code = """
+<style>
+    .container{
+        text-align: center;
+    }
+    .title {
+        color: red;
+    }
+    .card {
+        background-color: rgb(200,200,200);
+        border-radius: 20px;
+    }
+    .card-text {
+        width: 100%;
+        font-size: 20px;
+        font-weight: bold;
+    }
+</style>
+<div class="container">
+    <h1 class="title">Energetic Consumption Prediction</h1>
+    <div class="card">
+        <p class="card-text">Select the dates and reveal how much you will spend</p>
+    </div>
+</div>
+"""
+st.html(code)
 
 # Descarga datos
 @st.cache_data
 def load_data():
-    with open('streamlit-application/features.pkl', 'rb') as f:
+    with open('features.pkl', 'rb') as f:
             X = pickle.load(f)
-    with open('streamlit-application/objetivos.pkl', 'rb') as f:
+    with open('objetivos.pkl', 'rb') as f:
             y = pickle.load(f)
-    with open('streamlit-application/dates.pkl', 'rb') as f:
+    with open('dates.pkl', 'rb') as f:
             dates = pickle.load(f)
 
     return X, y, dates
@@ -56,216 +80,309 @@ appls = dict(zip(["Overall", "Dishwasher", "Office", "Fridge", "Wine Cellar", "G
 
 st.sidebar.title("Select the period")
 
-#pre_trained = st.sidebar.checkbox("Use pre-trained-model")
-
 # Usando el widget st.datetime_input para obtener la fecha y hora del usuario
-initial_day = st.sidebar.date_input("Initial day", value=datetime(2016, 1, 1), min_value = datetime(2016, 1, 1), max_value = datetime(2016, 12, 15))
-initial_hour = st.sidebar.time_input("Initial hour (exact hour will be considered)")
+initial_day = st.sidebar.date_input("Initial day", value=datetime(2016, 11, 1), min_value = datetime(2016, 1, 1), max_value = datetime(2016, 12, 15))
+initial_hour = st.sidebar.time_input("Initial hour (exact hour will be considered)", value=time(12,0))
 
 i_m = initial_day.month
 i_d = initial_day.day
 i_h = initial_hour.hour
 
-check  = datetime.combine(datetime.today(), initial_hour)
-check = check + timedelta(hours=1)
-check = check.time()
-
-final_day = st.sidebar.date_input("Final day (max difference: 30 days)", value=initial_day, min_value = initial_day, max_value = initial_day + timedelta(days=30))
-final_hour = st.sidebar.time_input("Final hour (exact hour will be considered)", value = check)
+final_day = st.sidebar.date_input("Final day (max difference: 30 days)", value=initial_day + timedelta(days=1), min_value = initial_day, max_value = min(initial_day + timedelta(days=30),
+                                                                                                                                     date(2016, 12, 15)))
+final_hour = st.sidebar.time_input("Final hour (exact hour will be considered)", value = initial_hour)
+if final_day == date(2016, 12, 15) and final_hour > time(22, 59):
+    st.error("ERROR: For this day, select an hour before 23:00")
 
 f_m = final_day.month
 f_d = final_day.day
 f_h = final_hour.hour
 
-# Crear botón para actualizar
-button_pressed = st.sidebar.button("Update")
+initial_index = dates.index[(dates['Mes'] == i_m) & (dates['Hora'] == i_h) & (dates['Dia'] == i_d)].tolist()[0]
+final_index = dates.index[(dates['Mes'] == f_m) & (dates['Hora'] == f_h) & (dates['Dia'] == f_d)].tolist()[0]
 
-# Verificar si se presionó el botón
-if button_pressed:
+dates_test = pd.to_datetime({
+    'year': 2016,
+    'month': dates.loc[initial_index:final_index, 'Mes'],
+    'day': dates.loc[initial_index:final_index, 'Dia'],
+    'hour': dates.loc[initial_index:final_index, 'Hora']
+})
 
-    initial_index = dates.index[(dates['Mes'] == i_m) & (dates['Hora'] == i_h) & (dates['Dia'] == i_d)].tolist()[0]
-    final_index = dates.index[(dates['Mes'] == f_m) & (dates['Hora'] == f_h) & (dates['Dia'] == f_d)].tolist()[0]
+X = np.array(df_features)
+y = np.array(df_objetivos[[appls[appl]]]).flatten()
 
-    dates_test = pd.to_datetime({
-        'year': 2016,
-        'month': dates.loc[initial_index:final_index, 'Mes'],
-        'day': dates.loc[initial_index:final_index, 'Dia'],
-        'hour': dates.loc[initial_index:final_index, 'Hora']
-    })
+X_test = X[initial_index:final_index+1]
+y_test = y[initial_index:final_index+1]
 
-    X = np.array(df_features)
-    y = np.array(df_objetivos[[appls[appl]]]).flatten()
+X_train = np.concatenate([X[:initial_index], X[final_index+1:]])
+y_train = np.concatenate([y[:initial_index], y[final_index+1:]])
 
-    X_test = X[initial_index:final_index+1]
-    y_test = y[initial_index:final_index+1]
+m = AdaBoostRegressor(
+    estimator = DecisionTreeRegressor(),
+    n_estimators = 20,
+)
+model = m.fit(X_train,y_train)
 
-    if False:
-        with open('model.pkl', 'rb') as f:
-            model = pickle.load(f)
-    else:
-        X_train = np.concatenate([X[:initial_index], X[final_index+1:]])
-        y_train = np.concatenate([y[:initial_index], y[final_index+1:]])
+yp = model.predict(X_test)
 
-        m1 = xgb.XGBRegressor(objective='reg:squarederror', colsample_bytree= 0.8, learning_rate= 0.1,
-                            max_depth= 5, min_child_weight= 5, n_estimators= 200, subsample= 0.6)
-        m2 = SVR(C=100, kernel='poly')
-        m3 = GradientBoostingRegressor(max_depth=4, n_estimators=200)
-        m = StackingRegressor(estimators=[("xgb", m1),
-                                            ("svm", m2),
-                                            ("gbr", m3)],
-                            final_estimator = RandomForestRegressor(max_depth=30, min_samples_leaf=2, min_samples_split=5, n_estimators=300))
-        model = m.fit(X_train,y_train)
+if initial_hour.minute == 0:
+    initial_datetime = datetime.combine(initial_day, initial_hour)
+else:
+    initial_datetime = datetime.combine(initial_day, initial_hour) - timedelta(hours=1)
+final_datetime = datetime.combine(final_day, final_hour)
 
-    yp = model.predict(X_test)
+if len(dates_test) > 60:
 
-    st.markdown(f"RMSE: {np.round(root_mean_squared_error(yp,y_test),3)}")
-    st.markdown(f"MAPE: {np.round(mean_absolute_percentage_error(yp,y_test)*100,3)}%")
+    df_p = pd.DataFrame({'fecha': dates_test, 'valor': yp})
+    df_pr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
+    s = 0
+    size = len(df_p)
+    n = size // 30
 
-    if len(dates_test) > 60:
+    code = """
+        <style>
+            span {{
+                position: relative;
+                top: -5px;
+                font-size: 12px;
+                margin-right: 1px;
+            }}
+            .agg {{
+                font-size: 15px;
+                font-style: italic;
+                color: rgb(173, 27, 27);
+                margin-bottom: -18px;
+            }}
+        </style>
 
-        df_p = pd.DataFrame({'fecha': dates_test, 'valor': yp})
-        df_pr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
-        s = 0
-        size = len(df_p)
-        n = size // 30
-        st.markdown(f"Aggregation of {n} hours")
-        while s+n < size:
-            portion = df_p.iloc[s:s+n]
-            s += n
-            portion['suma_acumulada'] = portion['valor'].cumsum()
-            df_pr = pd.concat([df_pr, portion.iloc[[-1]]])
-        portion = df_p.iloc[s:]
+        <p class="agg"><span>*</span>Aggregation of {} hours</p>
+    """.format(n)
+
+    st.html(code)
+
+    while s+n < size:
+        portion = df_p.iloc[s:s+n]
         s += n
         portion['suma_acumulada'] = portion['valor'].cumsum()
         df_pr = pd.concat([df_pr, portion.iloc[[-1]]])
+    portion = df_p.iloc[s:]
+    s += n
+    portion['suma_acumulada'] = portion['valor'].cumsum()
+    df_pr = pd.concat([df_pr, portion.iloc[[-1]]])
 
-        df_r = pd.DataFrame({'fecha': dates_test, 'valor': y_test})
-        df_rr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
-        s = 0
-        size = len(df_r)
-        n = size // 30
-        while s+n < size:
-            portion = df_r.iloc[s:s+n]
-            s += n
-            portion['suma_acumulada'] = portion['valor'].cumsum()
-            df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
-        portion = df_r.iloc[s:]
+    df_r = pd.DataFrame({'fecha': dates_test, 'valor': y_test})
+    df_rr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
+    s = 0
+    size = len(df_r)
+    n = size // 30
+    while s+n < size:
+        portion = df_r.iloc[s:s+n]
         s += n
         portion['suma_acumulada'] = portion['valor'].cumsum()
         df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
+    portion = df_r.iloc[s:]
+    s += n
+    portion['suma_acumulada'] = portion['valor'].cumsum()
+    df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
 
-        fig, ax = plt.subplots()
+    fig, ax = plt.subplots()
 
-        ax.plot(df_pr["fecha"], df_pr["suma_acumulada"], label='Predicho')
-        ax.plot(df_rr["fecha"], df_rr["suma_acumulada"], label='Real')
-        ax.set_xlabel('Date')
-        ax.set_ylabel('kW', rotation=0)
-        ax.set_title('Compartion between real and predicted')
-        ax.yaxis.set_label_coords(-0.1,0.5)
-        ax.legend()
-        ax.tick_params(axis="x", labelrotation=45)
-
-        # Mostrar el gráfico en Streamlit
-        st.pyplot(fig)
-
-    else:
-        st.markdown(f"No aggregation")
-
-        fig, ax = plt.subplots()
-
-        ax.plot(dates_test, yp, label='Predicho')
-        ax.plot(dates_test, y_test, label='Real')
-        ax.set_xlabel('Date')
-        ax.set_ylabel('kW', rotation=0)
-        ax.set_title('Compartion between real and predicted')
-        ax.yaxis.set_label_coords(-0.1,0.5)
-        ax.legend()
-        ax.tick_params(axis="x", labelrotation=45)
-
-        # Mostrar el gráfico en Streamlit
-        st.pyplot(fig)
-
-    initial_datetime = datetime.combine(initial_day, initial_hour)
-    final_datetime = datetime.combine(final_day, final_hour) + timedelta(hours=1)
-
-    def api(i,f):
-
-        i = i.strftime('%Y-%m-%d %H:%M:%S')
-        f = f.strftime('%Y-%m-%d %H:%M:%S')
-
-        i = str(i).replace(" ","T")
-        f = str(f).replace(" ","T")
-
-        url = "https://apidatos.ree.es/es/datos/mercados/precios-mercados-tiempo-real"
-        params = {
-            "start_date": i,
-            "end_date": f,
-            "time_trunc": "hour"
-        }
-
-        # Realizar la solicitud GET
-        response = requests.get(url, params=params)
-
-        # Verificar si la solicitud fue exitosa (código de estado 200)
-        if response.status_code == 200:
-            # Extraer los datos en formato JSON
-            data = response.json()
-            # Aquí puedes procesar los datos según tus necesidades
-            #print(data)
-        else:
-            # En caso de error, imprimir el código de estado
-            st.error(f"Error: {response.status_code}")
-
-        data = json.loads(json.dumps(data))
-        pvpc_values = data['included'][0]['attributes']['values']
-        #print("Precios de mercado peninsular en tiempo real (PVPC):")
-        precios = []
-        for value in pvpc_values:
-            precios.append(value['value'])
-
-        return precios
-    
-    precios = api(initial_datetime, final_datetime)
-
-    precios = np.array(precios)
-    costes = precios*yp/1000
-    c_ascendente = costes.cumsum()
-    c_total = costes.sum()
-
-    fig, (ax1,ax2) = plt.subplots(1,2)
-
-    if len(dates_test) > 60:
-
-        df_r = pd.DataFrame({'fecha': dates_test, 'valor': costes})
-        df_rr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
-        s = 0
-        size = len(df_r)
-        n = size // 30
-        while s+n < size:
-            portion = df_r.iloc[s:s+n]
-            s += n
-            portion['suma_acumulada'] = portion['valor'].cumsum()
-            df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
-        portion = df_r.iloc[s:]
-        s += n
-        portion['suma_acumulada'] = portion['valor'].cumsum()
-        df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
-
-        ax1.plot(df_rr["fecha"], df_rr["suma_acumulada"])
-    else:
-        ax1.plot(dates_test, costes)
-    ax2.plot(dates_test, c_ascendente)
-    ax1.set_xlabel('Date')
-    ax2.set_xlabel('Date')
-    ax1.set_ylabel('€')
-    ax2.set_ylabel('€')
-    ax1.set_title('Predicted Cost')
-    ax2.set_title('Accumulated Predicted Cost')
-    fig.subplots_adjust(wspace=0.5)
-    plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
-    plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+    ax.plot(df_pr["fecha"], df_pr["suma_acumulada"], label='Predicted', color="purple")
+    ax.plot(df_rr["fecha"], df_rr["suma_acumulada"], label='Real', color="darkblue")
+    ax.set_xlabel('Date')
+    ax.set_ylabel('kW', rotation=0)
+    ax.set_title(f'Prediction from {dates_test.iloc[0]} to {dates_test.iloc[-1]}')
+    ax.yaxis.set_label_coords(-0.15,0.5)
+    ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
+    ax.tick_params(axis="x", labelrotation=45)
 
     # Mostrar el gráfico en Streamlit
     st.pyplot(fig)
 
-    st.markdown(f"COSTE TOTAL: {c_total}€")
+else:
+    code = """
+        <style>
+            span {
+                position: relative;
+                top: -5px;
+                font-size: 12px;
+                margin-right: 1px;
+            }
+            .agg {
+                font-size: 15px;
+                font-style: italic;
+                color: rgb(173, 27, 27);
+                margin-bottom: -18px;
+            }
+        </style>
+        <p class="agg"><span>*</span>No Aggregation</p>
+    """
+    st.html(code)
+
+    fig, ax = plt.subplots()
+
+    ax.plot(dates_test, yp, label='Predicted', color="purple")
+    ax.plot(dates_test, y_test, label='Real', color="darkblue")
+    ax.set_xlabel('Date')
+    ax.set_ylabel('kW', rotation=0)
+    ax.set_title(f"Real vs Predicted from {initial_datetime} to {final_datetime}")
+    ax.yaxis.set_label_coords(-0.1,0.5)
+    ax.legend()
+    ax.tick_params(axis="x", labelrotation=45)
+
+    # Mostrar el gráfico en Streamlit
+    st.pyplot(fig)
+
+mets = ["RMSE",
+        "MAPE",
+        "R2-Score",
+        "MSE",
+        "MAE",
+        "Explained Variance Score",
+        "Median Absolute Error",
+        "Max Error",
+        "Mean Squared Logarithmic Error",
+        "Mean Poisson Deviance",
+        "Mean Gamma Deviance"]
+
+metrics = ["RMSE","MAPE"]
+metrics = st.multiselect("Select Metrics", mets, default=metrics)
+p = ""
+if "RMSE" in metrics:
+    p += '<p class="metric">RMSE: <span>{}</span></p>'.format(np.round(root_mean_squared_error(yp,y_test),3))
+if "MAPE" in metrics:
+    p += '<p class="metric">MAPE: <span>{}</span></p>'.format(np.round(mean_absolute_percentage_error(yp,y_test)*100,3))
+if "MSE" in metrics:
+    p += '<p class="metric">MSE: <span>{}</span></p>'.format(np.round(mean_squared_error(yp,y_test),3))
+if "MAE" in metrics:
+    p += '<p class="metric">MAE: <span>{}</span></p>'.format(np.round(mean_absolute_error(yp,y_test),3))
+if "R2-Score" in metrics:
+    p += '<p class="metric">R2-Score: <span>{}</span></p>'.format(np.round(r2_score(yp,y_test),3))
+if "Explained Variance Score" in metrics:
+    p += '<p class="metric">Explained Variance Score: <span>{}</span></p>'.format(np.round(explained_variance_score(yp,y_test),3))
+if "Median Absolute Error" in metrics:
+    p += '<p class="metric">Median Absolute Error: <span>{}</span></p>'.format(np.round(median_absolute_error(yp,y_test),3))
+if "Max Error" in metrics:
+    p += '<p class="metric">Max Error: <span>{}</span></p>'.format(np.round(max_error(yp,y_test),3))
+if "Mean Squared Logarithmic Error" in metrics:
+    p += '<p class="metric">Mean Squared Logarithmic Error: <span>{}</span></p>'.format(np.round(mean_squared_log_error(yp,y_test),3))
+if "Mean Poisson Deviance" in metrics:
+    p += '<p class="metric">Mean Poisson Deviance: <span>{}</span></p>'.format(np.round(mean_poisson_deviance(yp,y_test),3))
+if "Mean Gamma Deviance" in metrics:
+    p += '<p class="metric">Mean Gamma Deviance: <span>{}</span></p>'.format(np.round(mean_gamma_deviance(yp,y_test),3))
+
+
+code = """
+    <style>
+        .metrics-title {{
+            color: darkblue;
+            font-size: 30px;
+        }}
+        .metrics {{
+            background-color: lightblue;
+            padding: 5px;
+            border-radius: 7px;
+        }}
+        span {{
+            left-margin: 5px;
+            font-weight: normal;
+            font-size: 15px;
+            padding: 0;
+            position: relative;
+            top: 0;
+            left: 15px;
+        }}
+        .metric {{
+            font-weight: bold;
+            margin: 2px 0 2px 2px;
+            font-size: 15px;
+        }}
+    </style>
+    <h3 class=metrics-title>These are the evaluation metrics of your model:</h3>
+    <div class="metrics">
+        {}
+    </div>
+    """.format(p)
+st.html(code)
+
+def api(i,f):
+
+    i = i.strftime('%Y-%m-%d %H:%M:%S')
+    f = f.strftime('%Y-%m-%d %H:%M:%S')
+
+    i = str(i).replace(" ","T")
+    f = str(f).replace(" ","T")
+
+    url = "https://apidatos.ree.es/es/datos/mercados/precios-mercados-tiempo-real"
+    params = {
+        "start_date": i,
+        "end_date": f,
+        "time_trunc": "hour"
+    }
+
+    # Realizar la solicitud GET
+    response = requests.get(url, params=params)
+
+    # Verificar si la solicitud fue exitosa (código de estado 200)
+    if response.status_code == 200:
+        # Extraer los datos en formato JSON
+        data = response.json()
+        # Aquí puedes procesar los datos según tus necesidades
+        #print(data)
+    else:
+        # En caso de error, imprimir el código de estado
+        st.error(f"Error: {response.status_code}")
+
+    data = json.loads(json.dumps(data))
+    pvpc_values = data['included'][0]['attributes']['values']
+    #print("Precios de mercado peninsular en tiempo real (PVPC):")
+    precios = []
+    for value in pvpc_values:
+        precios.append(value['value'])
+
+    return precios
+
+precios = api(initial_datetime, final_datetime)
+
+precios = np.array(precios)
+costes = precios*yp/1000
+c_ascendente = costes.cumsum()
+c_total = costes.sum()
+
+fig, (ax1,ax2) = plt.subplots(1,2)
+
+if len(dates_test) > 60:
+
+    df_r = pd.DataFrame({'fecha': dates_test, 'valor': costes})
+    df_rr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
+    s = 0
+    size = len(df_r)
+    n = size // 30
+    while s+n < size:
+        portion = df_r.iloc[s:s+n]
+        s += n
+        portion['suma_acumulada'] = portion['valor'].cumsum()
+        df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
+    portion = df_r.iloc[s:]
+    s += n
+    portion['suma_acumulada'] = portion['valor'].cumsum()
+    df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
+
+    ax1.plot(df_rr["fecha"], df_rr["suma_acumulada"])
+else:
+    ax1.plot(dates_test, costes)
+ax2.plot(dates_test, c_ascendente)
+ax1.set_xlabel('Date')
+ax2.set_xlabel('Date')
+ax1.set_ylabel('€', rotation=0)
+ax2.set_ylabel('€', rotation=0)
+ax1.set_title('Predicted Cost')
+ax2.set_title('Accumulated Predicted Cost')
+fig.subplots_adjust(wspace=0.5)
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+
+# Mostrar el gráfico en Streamlit
+st.pyplot(fig)
+
+st.markdown(f"COSTE TOTAL: {c_total}€")
