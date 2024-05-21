@@ -81,14 +81,14 @@ appls = dict(zip(["Overall", "Dishwasher", "Office", "Fridge", "Wine Cellar", "G
 st.sidebar.title("Select the period")
 
 # Usando el widget st.datetime_input para obtener la fecha y hora del usuario
-initial_day = st.sidebar.date_input("Initial day", value=datetime(2016, 11, 1), min_value = datetime(2016, 1, 1), max_value = datetime(2016, 12, 15))
+initial_day = st.sidebar.date_input("Initial day", value=datetime(2016, 10, 1), min_value = datetime(2016, 1, 1), max_value = datetime(2016, 12, 15))
 initial_hour = st.sidebar.time_input("Initial hour (exact hour will be considered)", value=time(12,0))
 
 i_m = initial_day.month
 i_d = initial_day.day
 i_h = initial_hour.hour
 
-final_day = st.sidebar.date_input("Final day (max difference: 30 days)", value=initial_day + timedelta(days=1), min_value = initial_day, max_value = min(initial_day + timedelta(days=30),
+final_day = st.sidebar.date_input("Final day (max difference: 30 days)", value=initial_day + timedelta(days=20), min_value = initial_day, max_value = min(initial_day + timedelta(days=30),
                                                                                                                                      date(2016, 12, 15)))
 final_hour = st.sidebar.time_input("Final hour (exact hour will be considered)", value = initial_hour)
 if final_day == date(2016, 12, 15) and final_hour > time(22, 59):
@@ -118,7 +118,7 @@ X_train = np.concatenate([X[:initial_index], X[final_index+1:]])
 y_train = np.concatenate([y[:initial_index], y[final_index+1:]])
 
 m = AdaBoostRegressor(
-    estimator = DecisionTreeRegressor(criterion="friedman_mse", max_depth=None, min_samples_split=20, splitter="random"),
+    estimator = DecisionTreeRegressor(criterion='friedman_mse', max_depth=20, min_samples_split=10, splitter='random'),
     n_estimators = 25,
 )
 model = m.fit(X_train,y_train)
@@ -131,17 +131,17 @@ else:
     initial_datetime = datetime.combine(initial_day, initial_hour) - timedelta(hours=1)
 final_datetime = datetime.combine(final_day, final_hour)
 
-if len(dates_test) > 60:
+if len(dates_test) > 125:
 
     df_p = pd.DataFrame({'fecha': dates_test, 'valor': yp})
     df_pr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
     s = 0
     size = len(df_p)
-    n = size // 30
+    n = size // 75
 
     code = """
         <style>
-            span {{
+            .ast {{
                 position: relative;
                 top: -5px;
                 font-size: 12px;
@@ -155,7 +155,7 @@ if len(dates_test) > 60:
             }}
         </style>
 
-        <p class="agg"><span>*</span>Aggregation of {} hours</p>
+        <p class="agg"><span class="ast">*</span>Aggregation of {} hours</p>
     """.format(n)
 
     st.html(code)
@@ -174,7 +174,7 @@ if len(dates_test) > 60:
     df_rr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
     s = 0
     size = len(df_r)
-    n = size // 30
+    n = size // 75
     while s+n < size:
         portion = df_r.iloc[s:s+n]
         s += n
@@ -201,21 +201,7 @@ if len(dates_test) > 60:
 
 else:
     code = """
-        <style>
-            span {
-                position: relative;
-                top: -5px;
-                font-size: 12px;
-                margin-right: 1px;
-            }
-            .agg {
-                font-size: 15px;
-                font-style: italic;
-                color: rgb(173, 27, 27);
-                margin-bottom: -18px;
-            }
-        </style>
-        <p class="agg"><span>*</span>No Aggregation</p>
+        <p class="agg"><span class="ast">*</span>No Aggregation</p>
     """
     st.html(code)
 
@@ -249,27 +235,27 @@ metrics = ["RMSE","MAPE"]
 metrics = st.multiselect("Select Metrics", mets, default=metrics)
 p = ""
 if "RMSE" in metrics:
-    p += '<p class="metric">RMSE: <span>{}</span></p>'.format(np.round(root_mean_squared_error(yp,y_test),3))
+    p += '<p class="metric">RMSE: <span class="number">{}</span></p>'.format(np.round(root_mean_squared_error(yp,y_test),3))
 if "MAPE" in metrics:
-    p += '<p class="metric">MAPE: <span>{}</span></p>'.format(np.round(mean_absolute_percentage_error(yp,y_test)*100,3))
+    p += '<p class="metric">MAPE: <span class="number">{}</span></p>'.format(np.round(mean_absolute_percentage_error(yp,y_test)*100,3))
 if "MSE" in metrics:
-    p += '<p class="metric">MSE: <span>{}</span></p>'.format(np.round(mean_squared_error(yp,y_test),3))
+    p += '<p class="metric">MSE: <span class="number">{}</span></p>'.format(np.round(mean_squared_error(yp,y_test),3))
 if "MAE" in metrics:
-    p += '<p class="metric">MAE: <span>{}</span></p>'.format(np.round(mean_absolute_error(yp,y_test),3))
+    p += '<p class="metric">MAE: <span class="number">{}</span></p>'.format(np.round(mean_absolute_error(yp,y_test),3))
 if "R2-Score" in metrics:
-    p += '<p class="metric">R2-Score: <span>{}</span></p>'.format(np.round(r2_score(yp,y_test),3))
+    p += '<p class="metric">R2-Score: <span class="number">{}</span></p>'.format(np.round(r2_score(yp,y_test),3))
 if "Explained Variance Score" in metrics:
-    p += '<p class="metric">Explained Variance Score: <span>{}</span></p>'.format(np.round(explained_variance_score(yp,y_test),3))
+    p += '<p class="metric">Explained Variance Score: <span class="number">{}</span></p>'.format(np.round(explained_variance_score(yp,y_test),3))
 if "Median Absolute Error" in metrics:
-    p += '<p class="metric">Median Absolute Error: <span>{}</span></p>'.format(np.round(median_absolute_error(yp,y_test),3))
+    p += '<p class="metric">Median Absolute Error: <span class="number">{}</span></p>'.format(np.round(median_absolute_error(yp,y_test),3))
 if "Max Error" in metrics:
-    p += '<p class="metric">Max Error: <span>{}</span></p>'.format(np.round(max_error(yp,y_test),3))
+    p += '<p class="metric">Max Error: <span>{}</span class="number"></p>'.format(np.round(max_error(yp,y_test),3))
 if "Mean Squared Logarithmic Error" in metrics:
-    p += '<p class="metric">Mean Squared Logarithmic Error: <span>{}</span></p>'.format(np.round(mean_squared_log_error(yp,y_test),3))
+    p += '<p class="metric">Mean Squared Logarithmic Error: <span class="number">{}</span></p>'.format(np.round(mean_squared_log_error(yp,y_test),3))
 if "Mean Poisson Deviance" in metrics:
-    p += '<p class="metric">Mean Poisson Deviance: <span>{}</span></p>'.format(np.round(mean_poisson_deviance(yp,y_test),3))
+    p += '<p class="metric">Mean Poisson Deviance: <span class="number">{}</span></p>'.format(np.round(mean_poisson_deviance(yp,y_test),3))
 if "Mean Gamma Deviance" in metrics:
-    p += '<p class="metric">Mean Gamma Deviance: <span>{}</span></p>'.format(np.round(mean_gamma_deviance(yp,y_test),3))
+    p += '<p class="metric">Mean Gamma Deviance: <span class="number">{}</span></p>'.format(np.round(mean_gamma_deviance(yp,y_test),3))
 
 
 code = """
@@ -283,7 +269,7 @@ code = """
             padding: 5px;
             border-radius: 7px;
         }}
-        span {{
+        .number {{
             left-margin: 5px;
             font-weight: normal;
             font-size: 15px;
@@ -351,13 +337,13 @@ c_total = costes.sum()
 
 fig, (ax1,ax2) = plt.subplots(1,2)
 
-if len(dates_test) > 60:
+if len(dates_test) > 125:
 
     df_r = pd.DataFrame({'fecha': dates_test, 'valor': costes})
     df_rr = pd.DataFrame(columns=["fecha","valor","suma_acumulada"])
     s = 0
     size = len(df_r)
-    n = size // 30
+    n = size // 75
     while s+n < size:
         portion = df_r.iloc[s:s+n]
         s += n
@@ -368,10 +354,10 @@ if len(dates_test) > 60:
     portion['suma_acumulada'] = portion['valor'].cumsum()
     df_rr = pd.concat([df_rr, portion.iloc[[-1]]])
 
-    ax1.plot(df_rr["fecha"], df_rr["suma_acumulada"])
+    ax1.plot(df_rr["fecha"], df_rr["suma_acumulada"], color="darkblue")
 else:
-    ax1.plot(dates_test, costes)
-ax2.plot(dates_test, c_ascendente)
+    ax1.plot(dates_test, costes, color="darkblue")
+ax2.plot(dates_test, c_ascendente, color="darkblue")
 ax1.set_xlabel('Date')
 ax2.set_xlabel('Date')
 ax1.set_ylabel('€', rotation=0)
@@ -379,8 +365,8 @@ ax2.set_ylabel('€', rotation=0)
 ax1.set_title('Predicted Cost')
 ax2.set_title('Accumulated Predicted Cost')
 fig.subplots_adjust(wspace=0.5)
-plt.setp(ax1.xaxis.get_majorticklabels(), rotation=45)
-plt.setp(ax2.xaxis.get_majorticklabels(), rotation=45)
+plt.setp(ax1.xaxis.get_majorticklabels(), rotation=90)
+plt.setp(ax2.xaxis.get_majorticklabels(), rotation=90)
 
 # Mostrar el gráfico en Streamlit
 st.pyplot(fig)
