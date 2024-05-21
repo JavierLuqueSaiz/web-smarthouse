@@ -59,11 +59,11 @@ st.html(code)
 # Descarga datos
 @st.cache_data
 def load_data():
-    with open('streamlit-application/features.pkl', 'rb') as f:
+    with open('features.pkl', 'rb') as f:
             X = pickle.load(f)
-    with open('streamlit-application/objetivos.pkl', 'rb') as f:
+    with open('objetivos.pkl', 'rb') as f:
             y = pickle.load(f)
-    with open('streamlit-application/dates.pkl', 'rb') as f:
+    with open('dates.pkl', 'rb') as f:
             dates = pickle.load(f)
 
     return X, y, dates
@@ -118,8 +118,8 @@ X_train = np.concatenate([X[:initial_index], X[final_index+1:]])
 y_train = np.concatenate([y[:initial_index], y[final_index+1:]])
 
 m = AdaBoostRegressor(
-    estimator = DecisionTreeRegressor(),
-    n_estimators = 20,
+    estimator = DecisionTreeRegressor(criterion="friedman_mse", max_depth=None, min_samples_split=20, splitter="random"),
+    n_estimators = 25,
 )
 model = m.fit(X_train,y_train)
 
