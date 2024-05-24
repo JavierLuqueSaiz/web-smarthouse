@@ -29,6 +29,52 @@ from sklearn.metrics import mean_gamma_deviance
 
 cf.set_config_file(sharing='private',theme='white',offline=True)
 
+estilos = """
+<style>
+    img {
+        padding: 2rem;
+    }
+    .st-emotion-cache-6awftf {
+        position: absolute;
+        display: flex;
+        -webkit-box-align: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        justify-content: center;
+        z-index: 101;
+        height: 2.5rem;
+        width: 2.5rem;
+        transition: opacity 300ms ease 150ms, transform 300ms ease 150ms;
+        border: none;
+        color: purple;
+        border-radius: 50%;
+        right: 0.4rem;
+        top: 0.5rem;
+        background-color: transparent;
+    }
+    .st-emotion-cache-b5hcvb {
+        position: absolute;
+        display: flex;
+        -webkit-box-align: center;
+        align-items: center;
+        -webkit-box-pack: center;
+        justify-content: center;
+        z-index: 101;
+        height: 5rem;
+        width: 5rem;
+        transition: opacity 300ms ease 150ms, transform 300ms ease 150ms;
+        border: none;
+        color: purple;
+        border-radius: 50%;
+        right: 0.4rem;
+        top: 0.5rem;
+        background-color: transparent;
+    }
+</style>
+"""
+
+st.html(estilos)
+
 code = """
 <style>
     .container{
@@ -36,6 +82,7 @@ code = """
     }
     .title {
         color: red;
+        font-size: 2.8vw;
     }
     .card {
         background-color: rgb(200,200,200);
@@ -43,7 +90,7 @@ code = """
     }
     .card-text {
         width: 100%;
-        font-size: 20px;
+        font-size: 1.7vw;
         font-weight: bold;
     }
 </style>
@@ -143,15 +190,15 @@ if len(dates_test) > 125:
         <style>
             .ast {{
                 position: relative;
-                top: -5px;
-                font-size: 12px;
+                top: -0.4vw;
+                font-size: 1.2vw;
                 margin-right: 1px;
             }}
             .agg {{
-                font-size: 15px;
+                font-size: 0.9vw;
                 font-style: italic;
                 color: rgb(173, 27, 27);
-                margin-bottom: -18px;
+                margin-bottom: -1vw;
             }}
         </style>
 
@@ -237,7 +284,7 @@ p = ""
 if "RMSE" in metrics:
     p += '<p class="metric">RMSE: <span class="number">{}</span></p>'.format(np.round(root_mean_squared_error(yp,y_test),3))
 if "MAPE" in metrics:
-    p += '<p class="metric">MAPE: <span class="number">{}</span></p>'.format(np.round(mean_absolute_percentage_error(yp,y_test)*100,3))
+    p += '<p class="metric">MAPE: <span class="number">{}%</span></p>'.format(np.round(mean_absolute_percentage_error(yp,y_test)*100,3))
 if "MSE" in metrics:
     p += '<p class="metric">MSE: <span class="number">{}</span></p>'.format(np.round(mean_squared_error(yp,y_test),3))
 if "MAE" in metrics:
@@ -262,7 +309,7 @@ code = """
     <style>
         .metrics-title {{
             color: darkblue;
-            font-size: 30px;
+            font-size: 2.2vw;
         }}
         .metrics {{
             background-color: lightblue;
@@ -272,7 +319,7 @@ code = """
         .number {{
             left-margin: 5px;
             font-weight: normal;
-            font-size: 15px;
+            font-size: 1.1vw;
             padding: 0;
             position: relative;
             top: 0;
@@ -281,7 +328,7 @@ code = """
         .metric {{
             font-weight: bold;
             margin: 2px 0 2px 2px;
-            font-size: 15px;
+            font-size: 1.1vw;
         }}
     </style>
     <h3 class=metrics-title>These are the evaluation metrics of your model:</h3>
@@ -371,4 +418,32 @@ plt.setp(ax2.xaxis.get_majorticklabels(), rotation=90)
 # Mostrar el gráfico en Streamlit
 st.pyplot(fig)
 
-st.markdown(f"COSTE TOTAL: {c_total}€")
+code = """
+    <style>
+        .total-cont {{
+            background-color: lightblue;
+            padding: 5px;
+            border-radius: 7px;
+        }}
+        .numb {{
+            left-margin: 5px;
+            font-weight: normal;
+            font-size: 1.1vw;
+            padding: 0;
+            position: relative;
+            top: 0;
+            left: 15px;
+        }}
+        .total {{
+            font-weight: bold;
+            margin: 2px 0 2px 2px;
+            font-size: 1.1vw;
+        }}
+    </style>
+
+    <div class="total-cont">
+        <p class="total">TOTAL COST: <span class="numb">{}€</span></p>
+    </div>
+""".format(np.round(c_total))
+
+st.html(code)
