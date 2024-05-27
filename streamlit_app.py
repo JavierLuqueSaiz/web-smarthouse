@@ -31,44 +31,21 @@ cf.set_config_file(sharing='private',theme='white',offline=True)
 
 estilos = """
 <style>
+    .stMultiSelect .st-dr {
+        background-color: darkblue !important;
+    }
+    header {
+        background-image: linear-gradient(purple, rgb(0,0,100)) !important;
+        color: white !important;
+    }
     img {
         padding: 2rem;
     }
     .st-emotion-cache-6awftf {
-        position: absolute;
-        display: flex;
-        -webkit-box-align: center;
-        align-items: center;
-        -webkit-box-pack: center;
-        justify-content: center;
-        z-index: 101;
-        height: 2.5rem;
-        width: 2.5rem;
-        transition: opacity 300ms ease 150ms, transform 300ms ease 150ms;
-        border: none;
-        color: purple;
-        border-radius: 50%;
-        right: 0.4rem;
-        top: 0.5rem;
-        background-color: transparent;
+        color: purple !important;
     }
     .st-emotion-cache-b5hcvb {
-        position: absolute;
-        display: flex;
-        -webkit-box-align: center;
-        align-items: center;
-        -webkit-box-pack: center;
-        justify-content: center;
-        z-index: 101;
-        height: 5rem;
-        width: 5rem;
-        transition: opacity 300ms ease 150ms, transform 300ms ease 150ms;
-        border: none;
-        color: purple;
-        border-radius: 50%;
-        right: 0.4rem;
-        top: 0.5rem;
-        background-color: transparent;
+        color: purple !important;
     }
 </style>
 """
@@ -234,8 +211,8 @@ if len(dates_test) > 125:
 
     fig, ax = plt.subplots()
 
-    ax.plot(df_pr["fecha"], df_pr["suma_acumulada"], label='Predicted', color="purple")
     ax.plot(df_rr["fecha"], df_rr["suma_acumulada"], label='Real', color="darkblue")
+    ax.plot(df_pr["fecha"], df_pr["suma_acumulada"], label='Predicted', color="purple")
     ax.set_xlabel('Date')
     ax.set_ylabel('kW', rotation=0)
     ax.set_title(f'Prediction from {dates_test.iloc[0]} to {dates_test.iloc[-1]}')
@@ -309,7 +286,7 @@ code = """
     <style>
         .metrics-title {{
             color: darkblue;
-            font-size: 2.2vw;
+            font-size: 2.1vw;
         }}
         .metrics {{
             background-color: lightblue;
