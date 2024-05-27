@@ -79,7 +79,7 @@ code = """
 </div>
 """
 st.html(code)
-st.error("WARNING: If you select a period with the time change (27-03-2016 02:00 and 30-11-2016 03:00) it will give an error for the prices. It is pending.")
+st.error("WARNING: If you select a period with the time change (27-03-2016 02:00 and 30-10-2016 03:00) it will give an error for the prices. It is pending.")
 
 # Descarga datos
 @st.cache_data
