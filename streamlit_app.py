@@ -79,6 +79,7 @@ code = """
 </div>
 """
 st.html(code)
+st.error("WARNING: If you select a period with the time change (27-03-2016 02:00 and 30-11-2016 03:00) it will give an error for the prices. It is pending.")
 
 # Descarga datos
 @st.cache_data
@@ -108,19 +109,25 @@ st.sidebar.title("Select the period")
 initial_day = st.sidebar.date_input("Initial day", value=datetime(2016, 10, 1), min_value = datetime(2016, 1, 1), max_value = datetime(2016, 12, 15))
 initial_hour = st.sidebar.time_input("Initial hour (exact hour will be considered)", value=time(12,0))
 
-i_m = initial_day.month
-i_d = initial_day.day
-i_h = initial_hour.hour
-
 final_day = st.sidebar.date_input("Final day (max difference: 30 days)", value=initial_day + timedelta(days=20), min_value = initial_day, max_value = min(initial_day + timedelta(days=30),
                                                                                                                                      date(2016, 12, 15)))
 final_hour = st.sidebar.time_input("Final hour (exact hour will be considered)", value = initial_hour)
 if final_day == date(2016, 12, 15) and final_hour > time(22, 59):
     st.error("ERROR: For this day, select an hour before 23:00")
 
-f_m = final_day.month
-f_d = final_day.day
-f_h = final_hour.hour
+if initial_hour.minute == 0:
+    initial_datetime = datetime.combine(initial_day, initial_hour)
+else:
+    initial_datetime = datetime.combine(initial_day, initial_hour) - timedelta(hours=1)
+final_datetime = datetime.combine(final_day, final_hour)
+
+i_m = initial_datetime.month
+i_d = initial_datetime.day
+i_h = initial_datetime.hour
+
+f_m = final_datetime.month
+f_d = final_datetime.day
+f_h = final_datetime.hour
 
 initial_index = dates.index[(dates['Mes'] == i_m) & (dates['Hora'] == i_h) & (dates['Dia'] == i_d)].tolist()[0]
 final_index = dates.index[(dates['Mes'] == f_m) & (dates['Hora'] == f_h) & (dates['Dia'] == f_d)].tolist()[0]
@@ -148,12 +155,6 @@ m = AdaBoostRegressor(
 model = m.fit(X_train,y_train)
 
 yp = model.predict(X_test)
-
-if initial_hour.minute == 0:
-    initial_datetime = datetime.combine(initial_day, initial_hour)
-else:
-    initial_datetime = datetime.combine(initial_day, initial_hour) - timedelta(hours=1)
-final_datetime = datetime.combine(final_day, final_hour)
 
 if len(dates_test) > 125:
 
