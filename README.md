@@ -11,7 +11,7 @@ ___
 ---
 
 - **requirements.txt**: Versions of the libraries of python needed to deploy the streamlit application.
-- **streamlit_app.py**: Base code of the streamlit application developed with python, including inserts of HTML and CSS.
+- **streamlit_app.py**: Base code of the streamlit application developed with python, including inserts of HTML and CSS (https://smarthouse-proyiii.streamlit.app/).
 - **streamlit-application**: Folder with pickle files that contain the data used.
   - dates.pkl: numpy array with the dates.
   - features.pkl: numpy array with the independent variables.
