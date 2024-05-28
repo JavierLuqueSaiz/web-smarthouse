@@ -31,3 +31,6 @@ Training of models that deal with the data as a time series. The aggregation for
 
 Training of machine learning models, including embedings. The aggregation for this models is hourly.
 
+## Presentation
+
+https://www.canva.com/design/DAGFv8_S75w/pK_T9-W--0SMqK-kQCPPXw/edit?utm_content=DAGFv8_S75w&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton
